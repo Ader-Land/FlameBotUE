@@ -1,0 +1,17 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "FriendlyName": "FlameBot Chess Engine",
+    "Description": "FlameBot satranc motoru icin Unreal Engine 5 plugin",
+    "Category": "Other",
+    "CreatedBy": "Isa",
+    "EngineVersion": "5.6.0",
+    "Modules": [
+        {
+            "Name": "FlameBotPlugin",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ]
+}
