@@ -298,3 +298,60 @@ TArray<FFlameSquareInfo> UFlameBotWrapper::LoadGame(const FString& FEN)
     FlameBot_SetPosition(TCHAR_TO_UTF8(*FEN));
     return FetchBoardState();
 }
+
+void UFlameBotWrapper::MakeBotMoveAsync(int32 MoveTimeMs)
+{
+    // Parametreleri kopyala, lambda yakalar
+    int32 CapturedTime = MoveTimeMs;
+    UFlameBotWrapper* Self = this;
+
+    AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [Self, CapturedTime]()
+    {
+        // Arka planda bot düşünür
+        char buf[16] = {};
+        FlameBot_GetBestMove(CapturedTime, buf, sizeof(buf));
+
+        FString UCIMove = FString(UTF8_TO_TCHAR(buf));
+
+        FFlameMove Result;
+
+        if (UCIMove.IsEmpty() || UCIMove == TEXT("0000"))
+        {
+            Result.bIsValid = false;
+        }
+        else
+        {
+            Result.FromSquare = UCIMove.Left(2);
+            Result.ToSquare   = UCIMove.Mid(2, 2);
+
+            if (UCIMove.Len() >= 5)
+            {
+                Result.MoveType   = EFlameMoveType::Promotion;
+                Result.PromotedTo = EFlameChessPiece::Queen;
+            }
+            else if (Result.FromSquare == TEXT("e1") && Result.ToSquare == TEXT("g1"))
+                Result.MoveType = EFlameMoveType::KingsideCastling;
+            else if (Result.FromSquare == TEXT("e1") && Result.ToSquare == TEXT("c1"))
+                Result.MoveType = EFlameMoveType::QueensideCastling;
+            else if (Result.FromSquare == TEXT("e8") && Result.ToSquare == TEXT("g8"))
+                Result.MoveType = EFlameMoveType::KingsideCastling;
+            else if (Result.FromSquare == TEXT("e8") && Result.ToSquare == TEXT("c8"))
+                Result.MoveType = EFlameMoveType::QueensideCastling;
+            else
+                Result.MoveType = EFlameMoveType::Normal;
+
+            // Hamleyi uygula
+            FlameBot_MakeMove(TCHAR_TO_UTF8(*UCIMove));
+            Result.bIsValid = true;
+        }
+
+        // Game Thread'e dön, eventi tetikle
+        AsyncTask(ENamedThreads::GameThread, [Self, Result]()
+        {
+            if (IsValid(Self))
+            {
+                Self->OnBotMoveReady.Broadcast(Result);
+            }
+        });
+    });
+}
