@@ -30,3 +30,7 @@ Tüm fonksiyonlar Blueprint'ten erişilebilir. `UFlameBotWrapper` sınıfını a
 
 - Unreal Engine 5.6
 - Windows 64-bit
+
+## Teşekkürler
+
+Katkıları ve desteği için [@superroket169](https://github.com/superroket169) hesabına teşekkürler.
